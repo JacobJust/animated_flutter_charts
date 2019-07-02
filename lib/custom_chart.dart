@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -120,12 +122,12 @@ class ChartPainter extends CustomPainter {
       ..strokeWidth = 1
       ..color = Colors.black12;
 
-    canvas.drawRect(Rect.fromLTWH(0, 0, 200, 200), paint);
+    canvas.drawRect(Rect.fromLTWH(50, 0, 200, 200), paint);
 
     paint.strokeWidth = 0.5;
     for(double c = 40; c < 200; c += 40) {
-      canvas.drawLine(Offset(0, c), Offset(200, c), paint);
-      canvas.drawLine(Offset(c, 0), Offset(c, 200), paint);
+      canvas.drawLine(Offset(50, c), Offset(250, c), paint);
+      canvas.drawLine(Offset(c + 50.0, 0), Offset(c + 50.0, 200), paint);
     }
     paint.strokeWidth = 2;
 
@@ -144,6 +146,9 @@ class ChartPainter extends CustomPainter {
       double adjustedY = (p.y * yScale) - (chartLine._minY * yScale);
       double y = 200  - (adjustedY * progress);
 
+      //adjust to make room for axis values:
+      x += 50;
+
       if (init) {
         init = false;
         path.moveTo(x, y);
@@ -157,12 +162,34 @@ class ChartPainter extends CustomPainter {
     canvas.drawPath(path, paint
     );
 
-    TextSpan span = new TextSpan(style: new TextStyle(color: Colors.blue[800]), text: 'hat');
-    TextPainter tp = new TextPainter(text: span, textAlign: TextAlign.left, textDirection: TextDirection.ltr);
-    tp.layout();
-    tp.paint(canvas, new Offset(5.0, 5.0));
+    //TODO: move to constructor
+    double yTick = chartLine.height / 5;
 
-    //canvas.drawRect(Rect.fromLTWH(10, 10, 200 * progress, 200 * progress), paint);
+    for (int c = 0; c < 5; c++) {
+      TextSpan span = new TextSpan(style: new TextStyle(color: Colors.grey[800], fontWeight: FontWeight.w200, fontSize: 11), text: '${chartLine._minY + yTick * c}');
+      TextPainter tp = new TextPainter(text: span, textAlign: TextAlign.right, textDirection: TextDirection.ltr);
+      tp.layout();
+      tp.paint(canvas, new Offset(45 - tp.width, 190.0- (c * 40)));
+    }
+
+    for (int c = 0; c < 6; c++) {
+      drawText(canvas, 'hat fds', 45.0 + (c * 40.0), 205, (pi / 2) + pi);
+    }
+  }
+
+  void drawText(Canvas canvas, String name, double x, double y, double angleRotationInRadians) {
+    TextSpan span = new TextSpan(
+        style: new TextStyle(color: Colors.grey[800], fontSize: 11.0, fontWeight: FontWeight.w200), text: name);
+    TextPainter tp = new TextPainter(
+        text: span, textAlign: TextAlign.right,
+        textDirection: TextDirection.ltr);
+    tp.layout();
+
+    canvas.save();
+    canvas.translate(x, y + tp.width);
+    canvas.rotate(angleRotationInRadians);
+    tp.paint(canvas, new Offset(0.0,0.0));
+    canvas.restore();
   }
 
   @override
