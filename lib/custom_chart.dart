@@ -117,10 +117,17 @@ class ChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..color = Colors.yellow;
+      ..strokeWidth = 1
+      ..color = Colors.black12;
 
     canvas.drawRect(Rect.fromLTWH(0, 0, 200, 200), paint);
+
+    paint.strokeWidth = 0.5;
+    for(double c = 40; c < 200; c += 40) {
+      canvas.drawLine(Offset(0, c), Offset(200, c), paint);
+      canvas.drawLine(Offset(c, 0), Offset(c, 200), paint);
+    }
+    paint.strokeWidth = 2;
 
     paint.color = Colors.black87;
 
@@ -149,6 +156,11 @@ class ChartPainter extends CustomPainter {
     paint.color = Colors.green;
     canvas.drawPath(path, paint
     );
+
+    TextSpan span = new TextSpan(style: new TextStyle(color: Colors.blue[800]), text: 'hat');
+    TextPainter tp = new TextPainter(text: span, textAlign: TextAlign.left, textDirection: TextDirection.ltr);
+    tp.layout();
+    tp.paint(canvas, new Offset(5.0, 5.0));
 
     //canvas.drawRect(Rect.fromLTWH(10, 10, 200 * progress, 200 * progress), paint);
   }
