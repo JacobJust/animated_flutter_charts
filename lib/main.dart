@@ -45,15 +45,20 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: Container(
-        child: Column(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Stack(
             children: [
-              SizedBox(width: 200, height: 250,child: Text('hat')),
-              Expanded(child: CustomChart(curvedChartLine)
-              ),
-              SizedBox(width: 200, height: 200,child: Text('hat'),)
+              Positioned(
+                top: 360,
+                  left: 360,
+                  child: Text('hatX')),
+              Positioned(
+                  child: Container(
+                      height: 400,
+                      width: MediaQuery.of(context).size.width,
+                      child: CustomChart(curvedChartLine, key: new GlobalKey<RefreshIndicatorState>()))),
+              Positioned(
+                  child: Text('hatY')
+              )
             ]
         ),
       ),

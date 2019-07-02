@@ -87,7 +87,7 @@ class _CustomChartState extends State<CustomChart> with SingleTickerProviderStat
       padding: EdgeInsets.only(right: ChartPainter.axisOffset),
       child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
-              return _AnimatedChart(widget.chartLine, constraints.maxWidth, constraints.maxHeight, animation: animation);
+              return _AnimatedChart(widget.chartLine, constraints.maxWidth, constraints.maxHeight, animation: animation, key: new GlobalKey<RefreshIndicatorState>());
           }
       ),
     );
@@ -182,7 +182,7 @@ class ChartPainter extends CustomPainter {
     }
 
     for (int c = 1; c <= 5; c++) {
-      drawText(canvas, 'hat fds', 45.0 + (c * widthStepSize), size.height - 45, (pi / 2) + pi);
+      drawText(canvas, '02/07/2019', 45.0 + (c * widthStepSize), size.height - 45, (pi / 2) + pi);
     }
   }
 
