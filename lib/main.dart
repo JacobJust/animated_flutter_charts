@@ -44,8 +44,21 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-          child: CustomChart(curvedChartLine)
+      body: Container(
+        child: Column(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(width: 200, height: 250,child: Text('hat')),
+              Expanded(child: Padding(
+                padding: const EdgeInsets.only(right: 50.0),
+                child: CustomChart(curvedChartLine),
+              )
+              ),
+              SizedBox(width: 200, height: 200,child: Text('hat'),)
+            ]
+        ),
       ),
     );
   }

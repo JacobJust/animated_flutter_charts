@@ -83,10 +83,10 @@ class _CustomChartState extends State<CustomChart> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 250,
-      height: 250,
-      child: _AnimatedChart(widget.chartLine, 250, 250, animation: animation),
+    return LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+            return _AnimatedChart(widget.chartLine, constraints.maxWidth, constraints.maxHeight, animation: animation);
+        }
     );
   }
 }
@@ -110,6 +110,9 @@ class _AnimatedChart extends AnimatedWidget {
 
 class ChartPainter extends CustomPainter {
 
+  static final double axisOffset = 50.0;
+  static final double stepCount = 5;
+
   final double progress;
   final CurvedChartLine chartLine;
 
@@ -122,12 +125,16 @@ class ChartPainter extends CustomPainter {
       ..strokeWidth = 1
       ..color = Colors.black12;
 
-    canvas.drawRect(Rect.fromLTWH(50, 0, 200, 200), paint);
+    canvas.drawRect(Rect.fromLTWH(axisOffset, 0, size.width - axisOffset, size.height - axisOffset), paint);
 
     paint.strokeWidth = 0.5;
-    for(double c = 40; c < 200; c += 40) {
-      canvas.drawLine(Offset(50, c), Offset(250, c), paint);
-      canvas.drawLine(Offset(c + 50.0, 0), Offset(c + 50.0, 200), paint);
+
+    double widthStepSize = (size.width-axisOffset) / (stepCount+1);
+    double heightStepSize = (size.height-axisOffset) / (stepCount+1);
+
+    for(double c = 1; c <= stepCount; c ++) {
+      canvas.drawLine(Offset(axisOffset, c*heightStepSize), Offset(size.width, c*heightStepSize), paint);
+      canvas.drawLine(Offset(c*widthStepSize + axisOffset, 0), Offset(c*widthStepSize + axisOffset, size.height-axisOffset), paint);
     }
     paint.strokeWidth = 2;
 
@@ -136,18 +143,18 @@ class ChartPainter extends CustomPainter {
     Path path = Path();
     bool init = true;
 
+    double xScale = (size.width - axisOffset)/chartLine.width;
+    double xOffset = chartLine._minX * xScale;
+    double yScale = (size.height - axisOffset - 20)/chartLine.height;
+
     chartLine.points.forEach((p) {
-      double xScale = 200.0/chartLine.width;
-      double xOffset = chartLine._minX * xScale;
       double x = (p.x * xScale) - xOffset;
 
-      double yScale = 180.0/chartLine.height;
-
       double adjustedY = (p.y * yScale) - (chartLine._minY * yScale);
-      double y = 200  - (adjustedY * progress);
+      double y = (size.height - axisOffset)  - (adjustedY * progress);
 
       //adjust to make room for axis values:
-      x += 50;
+      x += axisOffset;
 
       if (init) {
         init = false;
@@ -159,21 +166,20 @@ class ChartPainter extends CustomPainter {
     });
 
     paint.color = Colors.green;
-    canvas.drawPath(path, paint
-    );
+    canvas.drawPath(path, paint);
 
     //TODO: move to constructor
     double yTick = chartLine.height / 5;
 
-    for (int c = 0; c < 5; c++) {
+    for (int c = 1; c <= 5; c++) {
       TextSpan span = new TextSpan(style: new TextStyle(color: Colors.grey[800], fontWeight: FontWeight.w200, fontSize: 11), text: '${chartLine._minY + yTick * c}');
       TextPainter tp = new TextPainter(text: span, textAlign: TextAlign.right, textDirection: TextDirection.ltr);
       tp.layout();
-      tp.paint(canvas, new Offset(45 - tp.width, 190.0- (c * 40)));
+      tp.paint(canvas, new Offset(45 - tp.width, (size.height - 6)- (c * heightStepSize) - axisOffset));
     }
 
-    for (int c = 0; c < 6; c++) {
-      drawText(canvas, 'hat fds', 45.0 + (c * 40.0), 205, (pi / 2) + pi);
+    for (int c = 1; c <= 5; c++) {
+      drawText(canvas, 'hat fds', 45.0 + (c * widthStepSize), size.height - 45, (pi / 2) + pi);
     }
   }
 
