@@ -48,15 +48,16 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Stack(
             children: [
               Positioned(
-                top: 360,
-                  left: 360,
+                top: 300,
+                  right: 20,
                   child: Text('hatX')),
               Positioned(
                   child: Container(
-                      height: 400,
-                      width: MediaQuery.of(context).size.width,
+                      height: 350,
+                      width: 350,
                       child: CustomChart(curvedChartLine, key: new GlobalKey<RefreshIndicatorState>()))),
               Positioned(
+                left: 20,
                   child: Text('hatY')
               )
             ]
