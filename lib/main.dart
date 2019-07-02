@@ -31,26 +31,14 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
 
-    CurvedChartLine curvedChartLine = CurvedChartLine([ChartPoint(0.0, 3.0),
+    List<ChartPoint> points = [
     ChartPoint(10.0, 30.0),
     ChartPoint(20.0, 40.0),
     ChartPoint(30.0, 50.0),
-    ChartPoint(40.0, 40.4),
-    ChartPoint(50.0, 35.9),
-    ChartPoint(60.0, 30.0),
-    ChartPoint(70.0, 32.0),
-    ChartPoint(80.0, 29.0),
+    ChartPoint(55.0, 40.4),
     ChartPoint(90.0, 32.0),
-    ChartPoint(100.0, 35.0),
-    ChartPoint(110.0, 43.0),
-    ChartPoint(120.0, 48.0),
-    ChartPoint(140.0, 70.0),
-    ChartPoint(150.0, 60.0),
-    ChartPoint(180.0, 32.0),
-    ChartPoint(190.0, 50.0),
-
-    ]);
-
+    ];
+    CurvedChartLine curvedChartLine = CurvedChartLine(points);
 
     return Scaffold(
       appBar: AppBar(

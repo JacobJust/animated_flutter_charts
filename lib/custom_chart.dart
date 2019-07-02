@@ -12,9 +12,38 @@ class ChartPoint {
 class CurvedChartLine {
   final List<ChartPoint> points;
 
-  CurvedChartLine(this.points);
-}
+  double _minX;
+  double _minY;
+  double _maxX;
+  double _maxY;
 
+  CurvedChartLine(this.points) {
+    if (points.length > 0) {
+      _minX = points[0].x;
+      _maxX = points[0].x;
+      _minY = points[0].y;
+      _maxY = points[0].y;
+    }
+
+    points.forEach((p) {
+      if (p.x < _minX) {
+        _minX = p.x;
+      }
+      if (p.x > _maxX) {
+        _maxX = p.x;
+      }
+      if (p.y < _minY) {
+        _minY = p.y;
+      }
+      if (p.y > _maxY) {
+        _maxY = p.y;
+      }
+    });
+  }
+
+  double get width => _maxX - _minX;
+  double get height => _maxY - _minY;
+}
 
 class CustomChart extends StatefulWidget {
 
@@ -35,13 +64,11 @@ class _CustomChartState extends State<CustomChart> with SingleTickerProviderStat
   void initState() {
     _controller = AnimationController(vsync: this, duration: Duration(milliseconds: 600));
 
-    Animation curve = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    Animation curve = CurvedAnimation(parent: _controller, curve: Curves.easeInOutExpo);
 
-    animation = Tween(begin: 0.0, end: 1).animate(curve);
-
+    animation = Tween(begin: 0.0, end: 1.0).animate(curve);
 
     _controller.forward();
-    _controller.repeat();
 
     super.initState();
   }
@@ -74,7 +101,7 @@ class _AnimatedChart extends AnimatedWidget {
     Animation animation = listenable as Animation;
 
     return CustomPaint(
-      painter: ChartPainter(animation.value, chartLine),
+      painter: ChartPainter(animation?.value, chartLine),
     );
   }
 }
@@ -93,25 +120,30 @@ class ChartPainter extends CustomPainter {
       ..strokeWidth = 3
       ..color = Colors.yellow;
 
-    double maxWidth;
-
-    List<ChartPoint> sorted = List.of(chartLine.points);
-
-    sorted.sort((a, b) => b.x.compareTo(a.x));
-    maxWidth = sorted.first.x;
-
-    canvas.drawRect(Rect.fromLTWH(0, 0, maxWidth, 200), paint);
+    canvas.drawRect(Rect.fromLTWH(0, 0, 200, 200), paint);
 
     paint.color = Colors.black87;
 
     Path path = Path();
-    path.moveTo(0, 200);
+    bool init = true;
 
     chartLine.points.forEach((p) {
-      double y = maxWidth - (p.y * progress);
+      double xScale = 200.0/chartLine.width;
+      double xOffset = chartLine._minX * xScale;
+      double x = (p.x * xScale) - xOffset;
 
-      path.lineTo(p.x, y);
-      canvas.drawCircle(Offset(p.x, y), 3, paint);
+      double yScale = 180.0/chartLine.height;
+
+      double adjustedY = (p.y * yScale) - (chartLine._minY * yScale);
+      double y = 200  - (adjustedY * progress);
+
+      if (init) {
+        init = false;
+        path.moveTo(x, y);
+      }
+
+      path.lineTo(x, y);
+      canvas.drawCircle(Offset(x, y), 3, paint);
     });
 
     paint.color = Colors.green;
