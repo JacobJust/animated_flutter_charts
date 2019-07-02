@@ -51,10 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(width: 200, height: 250,child: Text('hat')),
-              Expanded(child: Padding(
-                padding: const EdgeInsets.only(right: 50.0),
-                child: CustomChart(curvedChartLine),
-              )
+              Expanded(child: CustomChart(curvedChartLine)
               ),
               SizedBox(width: 200, height: 200,child: Text('hat'),)
             ]

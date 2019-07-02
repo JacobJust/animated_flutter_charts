@@ -83,10 +83,13 @@ class _CustomChartState extends State<CustomChart> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-            return _AnimatedChart(widget.chartLine, constraints.maxWidth, constraints.maxHeight, animation: animation);
-        }
+    return Padding(
+      padding: EdgeInsets.only(right: ChartPainter.axisOffset),
+      child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+              return _AnimatedChart(widget.chartLine, constraints.maxWidth, constraints.maxHeight, animation: animation);
+          }
+      ),
     );
   }
 }
@@ -138,7 +141,7 @@ class ChartPainter extends CustomPainter {
     }
     paint.strokeWidth = 2;
 
-    paint.color = Colors.black87;
+    paint.color = Colors.green;
 
     Path path = Path();
     bool init = true;
