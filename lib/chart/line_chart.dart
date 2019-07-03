@@ -2,6 +2,8 @@ import 'package:chart_library/chart/chart_line.dart';
 import 'package:chart_library/chart/chart_point.dart';
 import 'package:chart_library/chart/highlight_point.dart';
 import 'package:chart_library/main.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 class LineChart {
   static final double axisOffsetPX = 50.0;
@@ -21,6 +23,10 @@ class LineChart {
   double _xOffset;
   double _yScale;
   Map<int, List<HighlightPoint>> _seriesMap;
+  double _yTick;
+  double _axisOffSetWithPadding;
+  List<TextPainter> _axisTexts;
+  List<TextPainter> _yAxisTexts;
 
   LineChart(this.lines, this.fromTo) {
       if (lines.length > 0) {
@@ -84,6 +90,40 @@ class LineChart {
 
       index++;
     });
+
+    _yTick = height / 5;
+
+    _axisOffSetWithPadding = axisOffsetPX - 5.0;
+
+    _axisTexts = [];
+
+    for (int c = 0; c <= (stepCount + 1); c++) {
+      TextSpan span = new TextSpan(style: new TextStyle(color: Colors.grey[800], fontWeight: FontWeight.w200, fontSize: 10), text: '${(minY + yTick * c).round()}');
+      TextPainter tp = new TextPainter(text: span, textAlign: TextAlign.right, textDirection: TextDirection.ltr);
+      tp.layout();
+
+      _axisTexts.add(tp);
+    }
+
+    _yAxisTexts = [];
+
+    double chartDuration = fromTo.max.difference(fromTo.min).inSeconds.toDouble();
+    double stepInSeconds = chartDuration / (stepCount + 1);
+
+
+    for (int c = 0; c <= (stepCount + 1); c++) {
+      //drawText(canvas, '02/07/2019', 45.0 + (c * widthStepSize), size.height - 45, (pi / 2) + pi);
+      DateTime tick = fromTo.min.add(Duration(seconds: (stepInSeconds * c).round()));
+
+      TextSpan span = new TextSpan(
+          style: new TextStyle(color: Colors.grey[800], fontSize: 11.0, fontWeight: FontWeight.w200), text: '${tick.hour}:${tick.minute}');
+      TextPainter tp = new TextPainter(
+          text: span, textAlign: TextAlign.right,
+          textDirection: TextDirection.ltr);
+      tp.layout();
+
+      _yAxisTexts.add(tp);
+    }
   }
 
   double get heightStepSize => _heightStepSize;
@@ -95,5 +135,11 @@ class LineChart {
 
   Map<int, List<HighlightPoint>> get seriesMap => _seriesMap;
 
+  double get yTick => _yTick;
 
+  double get axisOffSetWithPadding => _axisOffSetWithPadding;
+
+  List<TextPainter> get axisTexts => _axisTexts;
+
+  List<TextPainter> get yAxisTexts => _yAxisTexts;
 }

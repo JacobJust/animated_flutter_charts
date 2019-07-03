@@ -126,6 +126,11 @@ class ChartPainter extends CustomPainter {
                           ..strokeWidth = 1
                           ..color = Colors.black26;
 
+  Paint linePainter = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2
+    ..color = Colors.black26;
+
   final double progress;
   final LineChart chart;
   final bool horizontalDragActive;
@@ -135,20 +140,12 @@ class ChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    Paint paint = Paint();
-
-    paint..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = Colors.black26;
-
     _drawGrid(canvas, size);
-
-    paint.strokeWidth = 2;
 
     int index = 0;
 
     chart.lines.forEach((chartLine) {
-      paint.color = chartLine.color;
+      linePainter.color = chartLine.color;
       Path path = Path();
       bool init = true;
 
@@ -169,7 +166,7 @@ class ChartPainter extends CustomPainter {
           }
 
           path.lineTo(x, y);
-          canvas.drawCircle(Offset(x, y), 2, paint);
+          canvas.drawCircle(Offset(x, y), 2, linePainter);
         });
       } else {
         points.forEach((p) {
@@ -179,44 +176,28 @@ class ChartPainter extends CustomPainter {
           }
 
           path.lineTo(p.chartPoint.x, p.chartPoint.y);
-          canvas.drawCircle(Offset(p.chartPoint.x, p.chartPoint.y), 2, paint);
+          canvas.drawCircle(Offset(p.chartPoint.x, p.chartPoint.y), 2, linePainter);
         });
       }
 
-      canvas.drawPath(path, paint);
+      canvas.drawPath(path, linePainter);
       index++;
     });
 
-    //TODO: move to constructor
-    double yTick = chart.height / 5;
-
-    double axisOffSetWithPadding = axisOffsetPX - 5.0;
-
     for (int c = 0; c <= (stepCount + 1); c++) {
-      TextSpan span = new TextSpan(style: new TextStyle(color: Colors.grey[800], fontWeight: FontWeight.w200, fontSize: 10), text: '${(chart.minY + yTick * c).round()}');
-      TextPainter tp = new TextPainter(text: span, textAlign: TextAlign.right, textDirection: TextDirection.ltr);
-      tp.layout();
-      tp.paint(canvas, new Offset(axisOffSetWithPadding - tp.width, (size.height - 6)- (c * chart.heightStepSize) - axisOffsetPX));
+      TextPainter tp = chart.axisTexts[c];
+      tp.paint(canvas, new Offset(chart.axisOffSetWithPadding - tp.width, (size.height - 6)- (c * chart.heightStepSize) - axisOffsetPX));
     }
 
-    DateTime from = chart.fromTo.min;
-    DateTime to = chart.fromTo.max;
-    
-    double chartDuration = to.difference(from).inSeconds.toDouble();
-    double stepInSeconds = chartDuration / (stepCount + 1);
-
-
     for (int c = 0; c <= (stepCount + 1); c++) {
-      //drawText(canvas, '02/07/2019', 45.0 + (c * widthStepSize), size.height - 45, (pi / 2) + pi);
-      DateTime tick = from.add(Duration(seconds: (stepInSeconds * c).round()));
-      drawText(canvas, '${tick.hour}:${tick.minute}', axisOffSetWithPadding + (c * chart.widthStepSize), size.height - axisOffSetWithPadding, pi * 1.5);
+      drawText(canvas, chart.yAxisTexts[c], chart.axisOffSetWithPadding + (c * chart.widthStepSize), size.height - chart.axisOffSetWithPadding, pi * 1.5);
     }
 
     if (horizontalDragActive) {
-      paint.color = Colors.teal.shade100;
+      linePainter.color = Colors.teal.shade100;
 
       if (horizontalDragPosition > axisOffsetPX && horizontalDragPosition < size.width) {
-        canvas.drawLine(Offset(horizontalDragPosition, 0), Offset(horizontalDragPosition, size.height - axisOffsetPX), paint);
+        canvas.drawLine(Offset(horizontalDragPosition, 0), Offset(horizontalDragPosition, size.height - axisOffsetPX), linePainter);
       }
 
       List<HighlightPoint> highlights = List();
@@ -242,10 +223,9 @@ class ChartPainter extends CustomPainter {
         }
       });
 
-
       index = 0;
       highlights.forEach((highlight) {
-        canvas.drawCircle(Offset(highlight.chartPoint.x, highlight.chartPoint.y), 5, paint);
+        canvas.drawCircle(Offset(highlight.chartPoint.x, highlight.chartPoint.y), 5, linePainter);
 
         TextSpan span = new TextSpan(style: new TextStyle(color: chart.lines[index].color, fontWeight: FontWeight.w200, fontSize: 12), text: '${highlight.yValue.toStringAsFixed(1)}');
         TextPainter tp = new TextPainter(text: span, textAlign: TextAlign.right, textDirection: TextDirection.ltr);
@@ -266,14 +246,7 @@ class ChartPainter extends CustomPainter {
     }
   }
 
-  void drawText(Canvas canvas, String name, double x, double y, double angleRotationInRadians) {
-    TextSpan span = new TextSpan(
-        style: new TextStyle(color: Colors.grey[800], fontSize: 11.0, fontWeight: FontWeight.w200), text: name);
-    TextPainter tp = new TextPainter(
-        text: span, textAlign: TextAlign.right,
-        textDirection: TextDirection.ltr);
-    tp.layout();
-
+  void drawText(Canvas canvas,TextPainter tp, double x, double y, double angleRotationInRadians) {
     canvas.save();
     canvas.translate(x, y + tp.width);
     canvas.rotate(angleRotationInRadians);
@@ -300,5 +273,4 @@ class ChartPainter extends CustomPainter {
 
     return candidate;
   }
-
 }
