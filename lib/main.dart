@@ -56,7 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-              SizedBox(width: 200, height: 250, child: Text('hat')),
+              SizedBox(width: 200, height: 150, child: Text('hat')),
                Expanded(child: CustomChart(lineChart)),
                    SizedBox(width: 200, height: 200, child: Text('hat')),
                    ]
@@ -80,14 +80,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Map<DateTime, double> createLine2() {
     Map<DateTime, double> data = {};
-    data[DateTime.now().subtract(Duration(minutes: 40))] = 11.0;
-    data[DateTime.now().subtract(Duration(minutes: 30))] = 22.0;
-    data[DateTime.now().subtract(Duration(minutes: 25))] = 37.0;
-    data[DateTime.now().subtract(Duration(minutes: 20))] = 31.0;
-    data[DateTime.now().subtract(Duration(minutes: 15))] = 29.0;
-    data[DateTime.now().subtract(Duration(minutes: 10))] = 11.0;
-    data[DateTime.now().subtract(Duration(minutes: 5))] = 37.0;
-
+    for(int i = 0; i < 3500 ; i++) {
+      data[DateTime.now().subtract(Duration(minutes: i))] = 10.0 + 2*i;
+    }
     return data;
   }
 
