@@ -1,57 +1,16 @@
 import 'dart:math';
 
+import 'package:chart_library/chart/chart_point.dart';
+import 'package:chart_library/chart/highlight_point.dart';
+import 'package:chart_library/chart/line_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-class ChartPoint {
-  final double x;
-  final double y;
-
-  ChartPoint(this.x, this.y);
-}
-
-
-class CurvedChartLine {
-  final List<ChartPoint> points;
-
-  double _minX;
-  double _minY;
-  double _maxX;
-  double _maxY;
-
-  CurvedChartLine(this.points) {
-    if (points.length > 0) {
-      _minX = points[0].x;
-      _maxX = points[0].x;
-      _minY = points[0].y;
-      _maxY = points[0].y;
-    }
-
-    points.forEach((p) {
-      if (p.x < _minX) {
-        _minX = p.x;
-      }
-      if (p.x > _maxX) {
-        _maxX = p.x;
-      }
-      if (p.y < _minY) {
-        _minY = p.y;
-      }
-      if (p.y > _maxY) {
-        _maxY = p.y;
-      }
-    });
-  }
-
-  double get width => _maxX - _minX;
-  double get height => _maxY - _minY;
-}
-
 class CustomChart extends StatefulWidget {
 
-  final CurvedChartLine chartLine;
+  final LineChart chart;
 
-  const CustomChart(this.chartLine, {Key key, }) : super(key: key);
+  const CustomChart(this.chart, {Key key, }) : super(key: key);
 
   @override
   _CustomChartState createState() => _CustomChartState();
@@ -61,6 +20,9 @@ class _CustomChartState extends State<CustomChart> with SingleTickerProviderStat
   AnimationController _controller;
 
   Animation animation;
+
+  bool horizontalDragActive = false;
+  double horizontalDragPosition = 0.0;
 
   @override
   void initState() {
@@ -87,7 +49,26 @@ class _CustomChartState extends State<CustomChart> with SingleTickerProviderStat
       padding: EdgeInsets.only(right: ChartPainter.axisOffset),
       child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
-              return _AnimatedChart(widget.chartLine, constraints.maxWidth, constraints.maxHeight, animation: animation, key: new GlobalKey<RefreshIndicatorState>());
+              return GestureDetector(
+                  child: _AnimatedChart(widget.chart, constraints.maxWidth, constraints.maxHeight, horizontalDragActive, horizontalDragPosition, animation: animation,),
+                  onHorizontalDragStart: (dragStartDetails) {
+                    horizontalDragActive = true;
+                    horizontalDragPosition = dragStartDetails.globalPosition.dx;
+                    setState(() {
+                    });
+                  },
+                onHorizontalDragUpdate: (dragUpdateDetails) {
+                  horizontalDragPosition += dragUpdateDetails.primaryDelta;
+                    setState(() {
+                    });
+                },
+                onHorizontalDragEnd: (dragEndDetails) {
+                  horizontalDragActive = false;
+                  horizontalDragPosition = 0.0;
+                  setState(() {
+                  });
+                },
+              );
           }
       ),
     );
@@ -97,16 +78,18 @@ class _CustomChartState extends State<CustomChart> with SingleTickerProviderStat
 class _AnimatedChart extends AnimatedWidget {
   final double height;
   final double width;
-  final CurvedChartLine chartLine;
+  final LineChart chart;
+  final bool horizontalDragActive;
+  final double horizontalDragPosition;
 
-  _AnimatedChart(this.chartLine, this.width, this.height, {Key key, Animation animation}) : super(key: key, listenable: animation);
+  _AnimatedChart(this.chart, this.width, this.height, this.horizontalDragActive, this.horizontalDragPosition, {Key key, Animation animation}) : super(key: key, listenable: animation);
 
   @override
   Widget build(BuildContext context) {
     Animation animation = listenable as Animation;
 
     return CustomPaint(
-      painter: ChartPainter(animation?.value, chartLine),
+      painter: ChartPainter(animation?.value, chart, horizontalDragActive, horizontalDragPosition),
     );
   }
 }
@@ -117,16 +100,21 @@ class ChartPainter extends CustomPainter {
   static final double stepCount = 5;
 
   final double progress;
-  final CurvedChartLine chartLine;
+  final LineChart chart;
+  final bool horizontalDragActive;
+  final double horizontalDragPosition;
 
-  ChartPainter(this.progress, this.chartLine);
+  Map<int, List<HighlightPoint>> seriesMap = Map();
+
+  ChartPainter(this.progress, this.chart, this.horizontalDragActive, this.horizontalDragPosition);
 
   @override
   void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..style = PaintingStyle.stroke
+    Paint paint = Paint();
+
+    paint..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = Colors.black12;
+      ..color = Colors.black26;
 
     canvas.drawRect(Rect.fromLTWH(axisOffset, 0, size.width - axisOffset, size.height - axisOffset), paint);
 
@@ -139,50 +127,110 @@ class ChartPainter extends CustomPainter {
       canvas.drawLine(Offset(axisOffset, c*heightStepSize), Offset(size.width, c*heightStepSize), paint);
       canvas.drawLine(Offset(c*widthStepSize + axisOffset, 0), Offset(c*widthStepSize + axisOffset, size.height-axisOffset), paint);
     }
+
     paint.strokeWidth = 2;
 
-    paint.color = Colors.green;
+    double xScale = (size.width - axisOffset)/chart.width;
+    double xOffset = chart.minX * xScale;
+    double yScale = (size.height - axisOffset - 20)/chart.height;
 
-    Path path = Path();
-    bool init = true;
+    bool addToMap = seriesMap.length == 0;
+    int index = 0;
 
-    double xScale = (size.width - axisOffset)/chartLine.width;
-    double xOffset = chartLine._minX * xScale;
-    double yScale = (size.height - axisOffset - 20)/chartLine.height;
+    chart.lines.forEach((chartLine) {
+      paint.color = chartLine.color;
+      Path path = Path();
+      bool init = true;
 
-    chartLine.points.forEach((p) {
-      double x = (p.x * xScale) - xOffset;
+      chartLine.points.forEach((p) {
+        double x = (p.x * xScale) - xOffset;
 
-      double adjustedY = (p.y * yScale) - (chartLine._minY * yScale);
-      double y = (size.height - axisOffset)  - (adjustedY * progress);
+        double adjustedY = (p.y * yScale) - (chart.minY * yScale);
+        double y = (size.height - axisOffset) - (adjustedY * progress);
 
-      //adjust to make room for axis values:
-      x += axisOffset;
+        //adjust to make room for axis values:
+        x += axisOffset;
 
-      if (init) {
-        init = false;
-        path.moveTo(x, y);
-      }
+        if (init) {
+          init = false;
+          path.moveTo(x, y);
+        }
 
-      path.lineTo(x, y);
-      canvas.drawCircle(Offset(x, y), 3, paint);
+        path.lineTo(x, y);
+        canvas.drawCircle(Offset(x, y), 2, paint);
+
+        if (addToMap) {
+          if (seriesMap[index] == null) {
+            seriesMap[index] = List();
+          }
+
+          seriesMap[index].add(HighlightPoint(ChartPoint(x, y), p.y));
+        }
+      });
+
+      canvas.drawPath(path, paint);
+      index++;
     });
 
-    paint.color = Colors.green;
-    canvas.drawPath(path, paint);
-
     //TODO: move to constructor
-    double yTick = chartLine.height / 5;
+    double yTick = chart.height / 5;
 
-    for (int c = 1; c <= 5; c++) {
-      TextSpan span = new TextSpan(style: new TextStyle(color: Colors.grey[800], fontWeight: FontWeight.w200, fontSize: 11), text: '${chartLine._minY + yTick * c}');
+    double axisOffSetWithPadding = axisOffset - 5.0;
+
+    for (int c = 0; c <= (stepCount + 1); c++) {
+      TextSpan span = new TextSpan(style: new TextStyle(color: Colors.grey[800], fontWeight: FontWeight.w200, fontSize: 10), text: '${(chart.minY + yTick * c).round()}');
       TextPainter tp = new TextPainter(text: span, textAlign: TextAlign.right, textDirection: TextDirection.ltr);
       tp.layout();
-      tp.paint(canvas, new Offset(45 - tp.width, (size.height - 6)- (c * heightStepSize) - axisOffset));
+      tp.paint(canvas, new Offset(axisOffSetWithPadding - tp.width, (size.height - 6)- (c * heightStepSize) - axisOffset));
     }
 
-    for (int c = 1; c <= 5; c++) {
-      drawText(canvas, '02/07/2019', 45.0 + (c * widthStepSize), size.height - 45, (pi / 2) + pi);
+    for (int c = 0; c <= (stepCount + 1); c++) {
+      //drawText(canvas, '02/07/2019', 45.0 + (c * widthStepSize), size.height - 45, (pi / 2) + pi);
+      drawText(canvas, 'val $c', axisOffSetWithPadding + (c * widthStepSize), size.height - axisOffSetWithPadding, pi * 1.5);
+    }
+
+    if (horizontalDragActive) {
+      paint.color = Colors.teal.shade100;
+
+      if (horizontalDragPosition > axisOffset && horizontalDragPosition < size.width) {
+        canvas.drawLine(Offset(horizontalDragPosition, 0), Offset(horizontalDragPosition, size.height - axisOffset), paint);
+      }
+
+      List<HighlightPoint> highlights = List();
+
+      seriesMap.forEach((key, list) {
+        HighlightPoint closest = findClosest(list);
+        highlights.add(closest);
+      });
+
+      HighlightPoint last = null;
+      highlights.forEach((highlight) {
+        if (last == null) {
+          last = highlight;
+        } else if ((last.YTextPosition.abs() - highlight.YTextPosition).abs() < 15) {
+          if ((last.chartPoint.x - highlight.chartPoint.x).abs() < 30) {
+            if (last.YTextPosition < highlight.YTextPosition) {
+              highlight.adjustTextY(15);
+            } else {
+              highlight.adjustTextY(-15);
+            }
+          }
+          last = highlight;
+        }
+      });
+
+
+      index = 0;
+      highlights.forEach((highlight) {
+        canvas.drawCircle(Offset(highlight.chartPoint.x, highlight.chartPoint.y), 5, paint);
+
+        TextSpan span = new TextSpan(style: new TextStyle(color: chart.lines[index].color, fontWeight: FontWeight.w200, fontSize: 12), text: '${highlight.yValue.toStringAsFixed(1)}');
+        TextPainter tp = new TextPainter(text: span, textAlign: TextAlign.right, textDirection: TextDirection.ltr);
+        tp.layout();
+        tp.paint(canvas, new Offset(highlight.chartPoint.x + 7, highlight.YTextPosition-10));
+
+        index++;
+      });
     }
   }
 
@@ -204,6 +252,21 @@ class ChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
     return true;
+  }
+
+  HighlightPoint findClosest(List<HighlightPoint> list) {
+    HighlightPoint candidate = list[0];
+
+    list.forEach((alternative) {
+      double candidateDist = (candidate.chartPoint.x - horizontalDragPosition).abs();
+      double alternativeDist = (alternative.chartPoint.x - horizontalDragPosition).abs();
+
+      if (alternativeDist < candidateDist) {
+        candidate = alternative;
+      }
+    });
+
+    return candidate;
   }
 
 }
