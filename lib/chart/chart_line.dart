@@ -1,9 +1,9 @@
 import 'dart:ui';
 
-import 'package:chart_library/chart/chart_point.dart';
+import 'package:chart_library/chart/datetime_chart_point.dart';
 
 class ChartLine {
-  final List<ChartPoint> points;
+  final List<DateTimeChartPoint> points;
   final Color color;
   final String unit;
 

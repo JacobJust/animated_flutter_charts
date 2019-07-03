@@ -1,5 +1,5 @@
 import 'package:chart_library/chart/chart_line.dart';
-import 'package:chart_library/chart/chart_point.dart';
+import 'package:chart_library/chart/datetime_chart_point.dart';
 import 'package:chart_library/chart/line_chart.dart';
 import 'package:chart_library/custom_chart.dart';
 import 'package:flutter/material.dart';
@@ -29,10 +29,22 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
+class Dates {
+  final DateTime min;
+  final DateTime max;
+
+  Dates(this.min, this.max);
+}
+
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    LineChart lineChart = LineChart([createLine(), createLine2()]);
+    Map<DateTime, double> line1 = createLineData();
+    Map<DateTime, double> line2 = createLine2();
+
+    Dates minMax = findMinMax([line1, line2]);
+
+    LineChart lineChart = LineChart([convert(line1, minMax, Colors.green), convert(line2, minMax, Colors.blue)], minMax);
 
     return Scaffold(
         appBar: AppBar(
@@ -53,29 +65,66 @@ class _MyHomePageState extends State<MyHomePage> {
       );
   }
 
-  ChartLine createLine() {
-    List<ChartPoint> points = [
-    ChartPoint(10.0, 30.0),
-    ChartPoint(20.0, 40.0),
-    ChartPoint(30.0, 50.0),
-    ChartPoint(55.0, 40.4),
-    ChartPoint(90.0, 32.0),
-    ];
-    ChartLine line1 = ChartLine(points, Colors.green, 'W');
-    return line1;
+  Map<DateTime, double> createLineData() {
+    Map<DateTime, double> data = {};
+    data[DateTime.now().subtract(Duration(minutes: 30))] = 30.0;
+    data[DateTime.now().subtract(Duration(minutes: 25))] = 40.0;
+    data[DateTime.now().subtract(Duration(minutes: 20))] = 33.0;
+    data[DateTime.now().subtract(Duration(minutes: 15))] = 22.0;
+    data[DateTime.now().subtract(Duration(minutes: 10))] = 13.0;
+    data[DateTime.now().subtract(Duration(minutes: 5))] = 57.0;
+
+    return data;
   }
 
 
-  ChartLine createLine2() {
-    List<ChartPoint> points = [
-      ChartPoint(15.0, 14.0),
-      ChartPoint(25.0, 50.0),
-      ChartPoint(35.0, 30.344444),
-      ChartPoint(60.0, 54.4),
-      ChartPoint(95.0, 16.0),
-      ChartPoint(115.0, 32.0),
-    ];
-    ChartLine line1 = ChartLine(points, Colors.blue, 'W');
-    return line1;
+  Map<DateTime, double> createLine2() {
+    Map<DateTime, double> data = {};
+    data[DateTime.now().subtract(Duration(minutes: 40))] = 11.0;
+    data[DateTime.now().subtract(Duration(minutes: 30))] = 22.0;
+    data[DateTime.now().subtract(Duration(minutes: 25))] = 37.0;
+    data[DateTime.now().subtract(Duration(minutes: 20))] = 31.0;
+    data[DateTime.now().subtract(Duration(minutes: 15))] = 29.0;
+    data[DateTime.now().subtract(Duration(minutes: 10))] = 11.0;
+    data[DateTime.now().subtract(Duration(minutes: 5))] = 37.0;
+
+    return data;
+  }
+
+  Dates findMinMax(List<Map<DateTime, double>> list) {
+    DateTime min;
+    DateTime max;
+
+    list.forEach((map) {
+      map.keys.forEach((dateTime) {
+        if (min == null) {
+          min = dateTime;
+          max = dateTime;
+        } else {
+          if (dateTime.isBefore(min)) {
+            min = dateTime;
+          }
+          if (dateTime.isAfter(max)) {
+            max = dateTime;
+          }
+        }
+      });
+    });
+
+    return Dates(min, max);
+  }
+
+  ChartLine convert(Map<DateTime, double> input, Dates minMax, Color color) {
+    DateTime from = minMax.min;
+
+    List<DateTimeChartPoint> result = [];
+
+    input.forEach((dateTime, value) {
+      double x = dateTime.difference(from).inSeconds.toDouble();
+      double y = value;
+      result.add(DateTimeChartPoint(x, y, dateTime));
+    });
+
+    return ChartLine(result, color, 'W');
   }
 }

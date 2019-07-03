@@ -184,9 +184,17 @@ class ChartPainter extends CustomPainter {
       tp.paint(canvas, new Offset(axisOffSetWithPadding - tp.width, (size.height - 6)- (c * heightStepSize) - axisOffset));
     }
 
+    DateTime from = chart.fromTo.min;
+    DateTime to = chart.fromTo.max;
+    
+    double chartDuration = to.difference(from).inSeconds.toDouble();
+    double stepInSeconds = chartDuration / (stepCount + 1);
+
+
     for (int c = 0; c <= (stepCount + 1); c++) {
       //drawText(canvas, '02/07/2019', 45.0 + (c * widthStepSize), size.height - 45, (pi / 2) + pi);
-      drawText(canvas, 'val $c', axisOffSetWithPadding + (c * widthStepSize), size.height - axisOffSetWithPadding, pi * 1.5);
+      DateTime tick = from.add(Duration(seconds: (stepInSeconds * c).round()));
+      drawText(canvas, '${tick.hour}:${tick.minute}', axisOffSetWithPadding + (c * widthStepSize), size.height - axisOffSetWithPadding, pi * 1.5);
     }
 
     if (horizontalDragActive) {

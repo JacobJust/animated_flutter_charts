@@ -1,13 +1,15 @@
 import 'package:chart_library/chart/chart_line.dart';
+import 'package:chart_library/main.dart';
 
 class LineChart {
   final List<ChartLine> lines;
+  final Dates fromTo;
   double _minX;
   double _minY;
   double _maxX;
   double _maxY;
 
-  LineChart(this.lines) {
+  LineChart(this.lines, this.fromTo) {
       if (lines.length > 0) {
         _minX = lines[0].minX;
         _maxX = lines[0].maxX;
