@@ -9,7 +9,6 @@ class LineChart {
   static final double axisOffsetPX = 50.0;
   static final double stepCount = 5;
 
-
   final List<ChartLine> lines;
   final Dates fromTo;
   double _minX;
@@ -23,6 +22,7 @@ class LineChart {
   double _xOffset;
   double _yScale;
   Map<int, List<HighlightPoint>> _seriesMap;
+  Map<int, Path> _pathMap;
   double _yTick;
   double _axisOffSetWithPadding;
   List<TextPainter> _axisTexts;
@@ -70,6 +70,7 @@ class LineChart {
     _yScale = (heightPX - axisOffsetPX - 20)/height;
 
     _seriesMap = Map();
+    _pathMap = Map();
 
     int index = 0;
     lines.forEach((chartLine) {
@@ -142,4 +143,73 @@ class LineChart {
   List<TextPainter> get axisTexts => _axisTexts;
 
   List<TextPainter> get yAxisTexts => _yAxisTexts;
+
+  List<HighlightPoint> getClosetHighlightPoints(double horizontalDragPosition) {
+    List<HighlightPoint> highlights = List();
+
+    seriesMap.forEach((key, list) {
+      HighlightPoint closest = _findClosest(list, horizontalDragPosition);
+      highlights.add(closest);
+    });
+
+    HighlightPoint last;
+    highlights.forEach((highlight) {
+      if (last == null) {
+        last = highlight;
+      } else if ((last.YTextPosition.abs() - highlight.YTextPosition).abs() < 15) {
+        if ((last.chartPoint.x - highlight.chartPoint.x).abs() < 30) {
+          if (last.YTextPosition < highlight.YTextPosition) {
+            highlight.adjustTextY(15);
+          } else {
+            highlight.adjustTextY(-15);
+          }
+        }
+        last = highlight;
+      }
+    });
+
+    return highlights;
+  }
+
+  HighlightPoint _findClosest(List<HighlightPoint> list, double horizontalDragPosition) {
+    HighlightPoint candidate = list[0];
+
+    double candidateDist = ((candidate.chartPoint.x) - horizontalDragPosition).abs();
+    list.forEach((alternative) {
+      double alternativeDist = ((alternative.chartPoint.x) - horizontalDragPosition).abs();
+
+      if (alternativeDist < candidateDist) {
+        candidate = alternative;
+        candidateDist = ((candidate.chartPoint.x) - horizontalDragPosition).abs();
+      }
+      if (alternativeDist > candidateDist) {
+        return candidate;
+      }
+    });
+
+    return candidate;
+  }
+
+  Path getPathCache(int index) {
+    if (_pathMap.containsKey(index)) {
+      return _pathMap[index];
+    } else {
+      Path path = Path();
+
+      bool init = true;
+
+      this.seriesMap[index].forEach((p) {
+        if (init) {
+          init = false;
+          path.moveTo(p.chartPoint.x, p.chartPoint.y);
+        }
+
+        path.lineTo(p.chartPoint.x, p.chartPoint.y);
+      });
+
+      _pathMap[index] = path;
+
+      return path;
+    }
+  }
 }

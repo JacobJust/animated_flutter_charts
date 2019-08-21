@@ -145,14 +145,16 @@ class ChartPainter extends CustomPainter {
 
     chart.lines.forEach((chartLine) {
       linePainter.color = chartLine.color;
-      Path path = Path();
-      bool init = true;
+      Path path;
 
       List<HighlightPoint> points = chart.seriesMap[index];
 
       bool drawCircles = points.length < 100;
 
       if (progress < 1.0) {
+        path = Path(); // create new path, to make animation work
+        bool init = true;
+
         chartLine.points.forEach((p) {
           double x = (p.x * chart.xScale) - chart.xOffset;
           double adjustedY = (p.y * chart.yScale) - (chart.minY * chart.yScale);
@@ -172,17 +174,11 @@ class ChartPainter extends CustomPainter {
           }
         });
       } else {
-        points.forEach((p) {
-          if (init) {
-            init = false;
-            path.moveTo(p.chartPoint.x, p.chartPoint.y);
-          }
+        path = chart.getPathCache(index);
 
-          path.lineTo(p.chartPoint.x, p.chartPoint.y);
-          if (drawCircles) {
-            canvas.drawCircle(Offset(p.chartPoint.x, p.chartPoint.y), 2, linePainter);
-          }
-        });
+        if (drawCircles) {
+          points.forEach((p) => canvas.drawCircle(Offset(p.chartPoint.x, p.chartPoint.y), 2, linePainter));
+        }
       }
 
       canvas.drawPath(path, linePainter);
@@ -205,28 +201,7 @@ class ChartPainter extends CustomPainter {
         canvas.drawLine(Offset(horizontalDragPosition, 0), Offset(horizontalDragPosition, size.height - axisOffsetPX), linePainter);
       }
 
-      List<HighlightPoint> highlights = List();
-
-      chart.seriesMap.forEach((key, list) {
-        HighlightPoint closest = _findClosest(list);
-        highlights.add(closest);
-      });
-
-      HighlightPoint last;
-      highlights.forEach((highlight) {
-        if (last == null) {
-          last = highlight;
-        } else if ((last.YTextPosition.abs() - highlight.YTextPosition).abs() < 15) {
-          if ((last.chartPoint.x - highlight.chartPoint.x).abs() < 30) {
-            if (last.YTextPosition < highlight.YTextPosition) {
-              highlight.adjustTextY(15);
-            } else {
-              highlight.adjustTextY(-15);
-            }
-          }
-          last = highlight;
-        }
-      });
+      List<HighlightPoint> highlights = chart.getClosetHighlightPoints(horizontalDragPosition);
 
       index = 0;
       highlights.forEach((highlight) {
@@ -262,24 +237,5 @@ class ChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
     return true;
-  }
-
-  HighlightPoint _findClosest(List<HighlightPoint> list) {
-    HighlightPoint candidate = list[0];
-
-    double candidateDist = ((candidate.chartPoint.x) - horizontalDragPosition).abs();
-    list.forEach((alternative) {
-      double alternativeDist = ((alternative.chartPoint.x) - horizontalDragPosition).abs();
-
-      if (alternativeDist < candidateDist) {
-        candidate = alternative;
-        candidateDist = ((candidate.chartPoint.x) - horizontalDragPosition).abs();
-      }
-      if (alternativeDist > candidateDist) {
-        return candidate;
-      }
-    });
-
-    return candidate;
   }
 }
