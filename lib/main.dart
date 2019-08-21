@@ -4,6 +4,10 @@ import 'package:chart_library/chart/line_chart.dart';
 import 'package:chart_library/custom_chart.dart';
 import 'package:flutter/material.dart';
 
+/**
+ * TODO: fix chart not starting at x: 0
+ */
+
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
@@ -12,6 +16,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      showPerformanceOverlay: true,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -39,8 +44,8 @@ class Dates {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    Map<DateTime, double> line1 = createLineData();
-    Map<DateTime, double> line2 = createLine2();
+    Map<DateTime, double> line1 = createLine1(); //createLineData(1.2);
+    Map<DateTime, double> line2 = createLine2(); //createLineData(1.4);
 
     Dates minMax = findMinMax([line1, line2]);
 
@@ -56,35 +61,52 @@ class _MyHomePageState extends State<MyHomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-              SizedBox(width: 200, height: 150, child: Text('hat')),
+              SizedBox(width: 200, height: 200, child: Text('')),
                Expanded(child: CustomChart(lineChart)),
-                   SizedBox(width: 200, height: 200, child: Text('hat')),
+                   SizedBox(width: 200, height: 200, child: Text('')),
                    ]
           ),
         ),
       );
   }
 
-  Map<DateTime, double> createLineData() {
+  Map<DateTime, double> createLineData(double factor) {
     Map<DateTime, double> data = {};
-    data[DateTime.now().subtract(Duration(minutes: 30))] = 30.0;
-    data[DateTime.now().subtract(Duration(minutes: 25))] = 40.0;
-    data[DateTime.now().subtract(Duration(minutes: 20))] = 33.0;
-    data[DateTime.now().subtract(Duration(minutes: 15))] = 22.0;
-    data[DateTime.now().subtract(Duration(minutes: 10))] = 13.0;
-    data[DateTime.now().subtract(Duration(minutes: 5))] = 57.0;
+
+    for (int c = 3000; c > 0; c--) {
+      data[DateTime.now().subtract(Duration(minutes: c))] = c.toDouble() * factor;
+    }
 
     return data;
   }
+
+  Map<DateTime, double> createLine1() {
+    Map<DateTime, double> data = {};
+    data[DateTime.now().subtract(Duration(minutes: 40))] = 14.0;
+    data[DateTime.now().subtract(Duration(minutes: 30))] = 25.0;
+    data[DateTime.now().subtract(Duration(minutes: 22))] = 47.0;
+    data[DateTime.now().subtract(Duration(minutes: 20))] = 21.0;
+    data[DateTime.now().subtract(Duration(minutes: 15))] = 22.0;
+    data[DateTime.now().subtract(Duration(minutes: 12))] = 15.0;
+    data[DateTime.now().subtract(Duration(minutes: 5))] = 34.0;
+
+    return data;
+  }
+
 
 
   Map<DateTime, double> createLine2() {
     Map<DateTime, double> data = {};
-    for(int i = 0; i < 3500 ; i++) {
-      data[DateTime.now().subtract(Duration(minutes: i))] = 10.0 + 2*i;
-    }
+    data[DateTime.now().subtract(Duration(minutes: 40))] = 11.0;
+    data[DateTime.now().subtract(Duration(minutes: 30))] = 22.0;
+    data[DateTime.now().subtract(Duration(minutes: 22))] = 37.0;
+    data[DateTime.now().subtract(Duration(minutes: 20))] = 31.0;
+    data[DateTime.now().subtract(Duration(minutes: 15))] = 29.0;
+    data[DateTime.now().subtract(Duration(minutes: 12))] = 11.0;
+    data[DateTime.now().subtract(Duration(minutes: 5))] = 37.0;
     return data;
   }
+
 
   Dates findMinMax(List<Map<DateTime, double>> list) {
     DateTime min;

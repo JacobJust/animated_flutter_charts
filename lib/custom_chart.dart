@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:chart_library/chart/chart_point.dart';
 import 'package:chart_library/chart/highlight_point.dart';
 import 'package:chart_library/chart/line_chart.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +17,7 @@ class CustomChart extends StatefulWidget {
 
 class _CustomChartState extends State<CustomChart> with SingleTickerProviderStateMixin {
   AnimationController _controller;
-  Animation animation;
+  Animation _animation;
 
   @override
   void initState() {
@@ -26,7 +25,7 @@ class _CustomChartState extends State<CustomChart> with SingleTickerProviderStat
 
     Animation curve = CurvedAnimation(parent: _controller, curve: Curves.easeInOutExpo);
 
-    animation = Tween(begin: 0.0, end: 1.0).animate(curve);
+    _animation = Tween(begin: 0.0, end: 1.0).animate(curve);
 
     _controller.forward();
 
@@ -47,7 +46,7 @@ class _CustomChartState extends State<CustomChart> with SingleTickerProviderStat
           builder: (BuildContext context, BoxConstraints constraints) {
             widget.chart.initialize(constraints.maxWidth, constraints.maxHeight);
 
-            return _GestureWrapper(constraints.maxHeight, constraints.maxWidth, widget.chart, animation);
+            return _GestureWrapper(constraints.maxHeight, constraints.maxWidth, widget.chart, _animation);
           }
       ),
     );
@@ -56,12 +55,12 @@ class _CustomChartState extends State<CustomChart> with SingleTickerProviderStat
 
 //Wrap gestures, to avoid reinitializing the chart model when doing gestures
 class _GestureWrapper extends StatefulWidget {
-  final double height;
+  final double _height;
   final double width;
   final LineChart chart;
   final Animation animation;
 
-  const _GestureWrapper(this.height, this.width, this.chart, this.animation, {Key key,}) : super(key: key);
+  const _GestureWrapper(this._height, this.width, this.chart, this.animation, {Key key,}) : super(key: key);
 
   @override
   _GestureWrapperState createState() => _GestureWrapperState();
@@ -74,7 +73,7 @@ class _GestureWrapperState extends State<_GestureWrapper> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      child: _AnimatedChart(widget.chart, widget.width, widget.height, horizontalDragActive, horizontalDragPosition, animation: widget.animation,),
+      child: _AnimatedChart(widget.chart, widget.width, widget._height, horizontalDragActive, horizontalDragPosition, animation: widget.animation,),
       onHorizontalDragStart: (dragStartDetails) {
         horizontalDragActive = true;
         horizontalDragPosition = dragStartDetails.globalPosition.dx;
@@ -136,7 +135,7 @@ class ChartPainter extends CustomPainter {
   final bool horizontalDragActive;
   final double horizontalDragPosition;
 
-  ChartPainter(this.progress, this.chart, this.horizontalDragActive, this.horizontalDragPosition);
+  ChartPainter(this.progress, this.chart, this.horizontalDragActive, this.horizontalDragPosition);// : horizontalDragPosition = horizontalDragActive ? horizontalDragPosition - axisOffsetPX  : 0;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -150,6 +149,8 @@ class ChartPainter extends CustomPainter {
       bool init = true;
 
       List<HighlightPoint> points = chart.seriesMap[index];
+
+      bool drawCircles = points.length < 100;
 
       if (progress < 1.0) {
         chartLine.points.forEach((p) {
@@ -166,7 +167,9 @@ class ChartPainter extends CustomPainter {
           }
 
           path.lineTo(x, y);
-          canvas.drawCircle(Offset(x, y), 2, linePainter);
+          if (drawCircles) {
+            canvas.drawCircle(Offset(x, y), 2, linePainter);
+          }
         });
       } else {
         points.forEach((p) {
@@ -176,7 +179,9 @@ class ChartPainter extends CustomPainter {
           }
 
           path.lineTo(p.chartPoint.x, p.chartPoint.y);
-          canvas.drawCircle(Offset(p.chartPoint.x, p.chartPoint.y), 2, linePainter);
+          if (drawCircles) {
+            canvas.drawCircle(Offset(p.chartPoint.x, p.chartPoint.y), 2, linePainter);
+          }
         });
       }
 
@@ -190,7 +195,7 @@ class ChartPainter extends CustomPainter {
     }
 
     for (int c = 0; c <= (stepCount + 1); c++) {
-      drawText(canvas, chart.yAxisTexts[c], chart.axisOffSetWithPadding + (c * chart.widthStepSize), size.height - chart.axisOffSetWithPadding, pi * 1.5);
+      _drawRotatedText(canvas, chart.yAxisTexts[c], chart.axisOffSetWithPadding + (c * chart.widthStepSize), size.height - chart.axisOffSetWithPadding, pi * 1.5);
     }
 
     if (horizontalDragActive) {
@@ -203,7 +208,7 @@ class ChartPainter extends CustomPainter {
       List<HighlightPoint> highlights = List();
 
       chart.seriesMap.forEach((key, list) {
-        HighlightPoint closest = findClosest(list);
+        HighlightPoint closest = _findClosest(list);
         highlights.add(closest);
       });
 
@@ -246,7 +251,7 @@ class ChartPainter extends CustomPainter {
     }
   }
 
-  void drawText(Canvas canvas,TextPainter tp, double x, double y, double angleRotationInRadians) {
+  void _drawRotatedText(Canvas canvas,TextPainter tp, double x, double y, double angleRotationInRadians) {
     canvas.save();
     canvas.translate(x, y + tp.width);
     canvas.rotate(angleRotationInRadians);
@@ -259,15 +264,19 @@ class ChartPainter extends CustomPainter {
     return true;
   }
 
-  HighlightPoint findClosest(List<HighlightPoint> list) {
+  HighlightPoint _findClosest(List<HighlightPoint> list) {
     HighlightPoint candidate = list[0];
 
+    double candidateDist = ((candidate.chartPoint.x) - horizontalDragPosition).abs();
     list.forEach((alternative) {
-      double candidateDist = (candidate.chartPoint.x - horizontalDragPosition).abs();
-      double alternativeDist = (alternative.chartPoint.x - horizontalDragPosition).abs();
+      double alternativeDist = ((alternative.chartPoint.x) - horizontalDragPosition).abs();
 
       if (alternativeDist < candidateDist) {
         candidate = alternative;
+        candidateDist = ((candidate.chartPoint.x) - horizontalDragPosition).abs();
+      }
+      if (alternativeDist > candidateDist) {
+        return candidate;
       }
     });
 
